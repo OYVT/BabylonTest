@@ -45,79 +45,108 @@
         const ground = BABYLON.MeshBuilder.CreateGround("ground", {width:10, height:10});
         //#endregion
 
+        let stock;
+        const highlight = new BABYLON.HighlightLayer("hl1", scene);
+        const shapes = [];
+        let shapeFollowingMouse = null;
+
         //#region Box
         const box = BABYLON.MeshBuilder.CreateBox("box", {
-            width: 3,
-            height: 1,
-            depth: 5
+            width: 1,
+            height: 0.7501,
+            depth: 2
         });
-        //box.scaling = new BABYLON.Vector3(2, 1.5, 3);   
-        box.position = new BABYLON.Vector3(0, 0.5, 0);
-        //box.rotation.y = Math.PI / 4;
-        //box.rotation.y = BABYLON.Tools.ToRadians(45);
+        box.position = new BABYLON.Vector3(0, 0.6251, 0);
         const boxMaterial = new BABYLON.StandardMaterial("boxMaterial", scene);
-        boxMaterial.diffuseColor = new BABYLON.Color3.Blue(); // Set the color to green
+        boxMaterial.diffuseColor = new BABYLON.Color3.Green();
         boxMaterial.alpha = 0;
         box.material = boxMaterial;
+        shapes.push(box);
         //#endregion
-        
+
         //#region Cylinder
         const cylinder = BABYLON.MeshBuilder.CreateCylinder("cylinder", {
-            height: 0.5,
+            height: 0.5001,
             tessellation: 100
         });
-        cylinder.position = new BABYLON.Vector3(0, 0.75, 0);
+        cylinder.position = new BABYLON.Vector3(0, 0.7501, 0);
         const cyclinderMaterial = new BABYLON.StandardMaterial("cyclinderMaterial", scene);
         cyclinderMaterial.diffuseColor = new BABYLON.Color3.Red(); // Set the color to red
         cyclinderMaterial.alpha = 0;
         cylinder.material = cyclinderMaterial;
+        shapes.push(cylinder);
+        //#endregion
 
-        let isCylinderFollowingMouse = false;
-        const highlight = new BABYLON.HighlightLayer("hl1", scene);
-
-        cylinder.actionManager = new BABYLON.ActionManager(scene);
-        cylinder.actionManager.registerAction(
+        function onPointerMove(event) {
+            const pickResult = scene.pick(event.clientX, event.clientY);
+            if (pickResult.hit) {
+              shapeFollowingMouse.position.x = pickResult.pickedPoint.x;
+              shapeFollowingMouse.position.z = pickResult.pickedPoint.z;
+            }
+        }
+        
+        const actionManager = new BABYLON.ActionManager(scene);
+        actionManager.registerAction(
             new BABYLON.ExecuteCodeAction(
                 BABYLON.ActionManager.OnPickTrigger,
-                function () {
-                    if (!isCylinderFollowingMouse) {
-                        canvas.addEventListener("pointermove", onPointerMove);
-                        // Add the highlight layer.
-                        highlight.addMesh(cylinder, BABYLON.Color3.White());
-                        isCylinderFollowingMouse = true;
-                    } else {
+                function (event) {
+                    if (shapeFollowingMouse) {
                         canvas.removeEventListener("pointermove", onPointerMove);
-                        highlight.removeMesh(cylinder);
-                        isCylinderFollowingMouse = false;
+                        highlight.removeMesh(shapeFollowingMouse);
+                        shapeFollowingMouse.disableEdgesRendering();
+                        reDrawStock();
+                        shapeFollowingMouse = null;
+                    } else {
+                        shapeFollowingMouse = event.meshUnderPointer;
+                        canvas.addEventListener("pointermove", onPointerMove);
+                        highlight.addMesh(shapeFollowingMouse, BABYLON.Color3.White());
+                        shapeFollowingMouse.enableEdgesRendering();
+                        shapeFollowingMouse.edgesWidth = 2.0;
+                        shapeFollowingMouse.edgesColor = new BABYLON.Color4(1, 1, 1, 1);
                     }
                 }
             )
         );
-       
-        function onPointerMove(event) {
-            const pickResult = scene.pick(event.clientX, event.clientY);
-            if (pickResult.hit) {
-                cylinder.position.x = pickResult.pickedPoint.x;
-                cylinder.position.z = pickResult.pickedPoint.z;
-            }
-        }
-        //#endregion
+        shapes.forEach((shape) => {
+            shape.actionManager = actionManager;
+        });
 
-        //#region Substract cylinder from box
-        const boxCSG = BABYLON.CSG.FromMesh(box);
-        const cylinderCSG = BABYLON.CSG.FromMesh(cylinder);
-        boxCSG.subtractInPlace(cylinderCSG);
-        const subMeshMaterial = new BABYLON.StandardMaterial("subMeshMaterial", scene);
-        subMeshMaterial.diffuseColor = new BABYLON.Color3.Purple();
-        const subMesh = boxCSG.toMesh("subMesh", subMeshMaterial, scene);
-        //scene.removeMesh(box);
-        //box.dispose();
-        //scene.removeMesh(cylinder);
-        //cylinder.dispose();
-        //#endregion
+        function newStock() {
+            const stock = BABYLON.MeshBuilder.CreateBox("stock", {
+                width: 3,
+                height: 1,
+                depth: 5
+            });
+            stock.position = new BABYLON.Vector3(0, 0.5, 0);
+            return stock;
+        }
+
+        function reDrawStock() {
+            if (stock) {
+                scene.removeMesh(stock);
+                stock.dispose();
+            }
+            stock = newStock();
+            const stockCSG = BABYLON.CSG.FromMesh(stock);
+            scene.removeMesh(stock);
+            stock.dispose();
+            shapes.forEach((shape) => {
+                const shapeCSG = BABYLON.CSG.FromMesh(shape);
+                stockCSG.subtractInPlace(shapeCSG);
+            });
+            //const stockMaterial = new BABYLON.StandardMaterial("stockMaterial", scene);
+            //stockMaterial.diffuseColor = new BABYLON.Color3.Blue();
+            const stockMaterial = new BABYLON.StandardMaterial("stockMaterial", scene);
+            stockMaterial.diffuseTexture = new BABYLON.Texture("https://th.bing.com/th/id/R.539d1e9de72d9534b9f5ad4acbcae475?rik=GCisisx61UBRIA&riu=http%3a%2f%2fwww.myfreetextures.com%2fwp-content%2fuploads%2f2014%2f10%2fseamless-wood-background-1.jpg&ehk=UJomESiA%2bKBpeWdjz684u5n4ZGJDDKzE4TLUeiu0IPk%3d&risl=&pid=ImgRaw&r=0");
+            stock = stockCSG.toMesh("stock", stockMaterial, scene);
+            stock.ispickable = false;
+        }
+
+        reDrawStock();
 
         const camera = new BABYLON.ArcRotateCamera("camera", 0, 0, 15, new BABYLON.Vector3(0, 0, 0));
         camera.attachControl(canvas, true);
+        camera.inputs.attached.mousewheel.wheelPrecision = 50;
         const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0));
 
         //#region GUI
