@@ -82,9 +82,31 @@
             if (pickResult.hit) {
               shapeFollowingMouse.position.x = pickResult.pickedPoint.x;
               shapeFollowingMouse.position.z = pickResult.pickedPoint.z;
+              snapToShape(shapeFollowingMouse);
             }
         }
+
+        const snapThreshold = 5;
+        function snapToShape(shape) {
+            for (let i = 0; i < shapes.length; i++) {
+                const otherShape = shapes[i];
+                if (otherShape !== shape) {
+                    const shapeTopVectors = shape.getBoundingInfo().boundingBox.vectorsWorld.filter(vector => vector.y > 1);
+                    const otherShapeBottomVectors = otherShape.getBoundingInfo().boundingBox.vectorsWorld.filter(vector => vector.y > 1);
+
+
+                    /*const distance = BABYLON.Vector3.Distance(shape.getBoundingInfo().boundingBox.minimumWorld, otherShape.getBoundingInfo().boundingBox.maximumWorld);
+                    if (distance < snapThreshold) {
+                        shape.position = otherShape.position.clone();
+                        break;
+                    }*/
+                }
+            }
+        }
+
         
+        //const pointerDragBehavior = new BABYLON.PointerDragBehavior({dragPlaneNormal: new BABYLON.Vector3(0, 1, 0)});
+
         const actionManager = new BABYLON.ActionManager(scene);
         actionManager.registerAction(
             new BABYLON.ExecuteCodeAction(
@@ -92,13 +114,16 @@
                 function (event) {
                     if (shapeFollowingMouse) {
                         canvas.removeEventListener("pointermove", onPointerMove);
+                        //shapeFollowingMouse.removeBehavior(pointerDragBehavior);
                         highlight.removeMesh(shapeFollowingMouse);
                         shapeFollowingMouse.disableEdgesRendering();
                         reDrawStock();
                         shapeFollowingMouse = null;
+                        console.log(shapes[0].getBoundingInfo().boundingBox);
                     } else {
                         shapeFollowingMouse = event.meshUnderPointer;
                         canvas.addEventListener("pointermove", onPointerMove);
+                        //shapeFollowingMouse.addBehavior(pointerDragBehavior);
                         highlight.addMesh(shapeFollowingMouse, BABYLON.Color3.White());
                         shapeFollowingMouse.enableEdgesRendering();
                         shapeFollowingMouse.edgesWidth = 2.0;
