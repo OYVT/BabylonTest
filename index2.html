@@ -79,6 +79,7 @@
 
         function onPointerMove(event) {
             const pickResult = scene.pick(event.clientX, event.clientY);
+            console.log(`Hit: ${pickResult.hit}`);
             if (pickResult.hit) {
               shapeFollowingMouse.position.x = pickResult.pickedPoint.x;
               shapeFollowingMouse.position.z = pickResult.pickedPoint.z;
@@ -178,7 +179,7 @@
         var advancedTexture = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("UI");
         //advancedTexture.isforeground = false;
 
-        var panel = new BABYLON.GUI.StackPanel();    
+        var panel = new BABYLON.GUI.StackPanel();
         panel.isVertical = true;
         panel.horizontalAlignment = BABYLON.GUI.Control.HORIZONTAL_ALIGNMENT_LEFT;
         panel.verticalAlignment = BABYLON.GUI.Control.VERTICAL_ALIGNMENT_TOP;

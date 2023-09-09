@@ -293,6 +293,16 @@ const createScene = function () {
         });
         shapres2D.push(polygon);
         vertexManipulator.selectMesh(polygon);
+
+        const extrusion = BABYLON.MeshBuilder.ExtrudePolygon("extrusion", {
+            shape: shape,
+            path: [
+                new BABYLON.Vector3(0, 0, 0),
+                new BABYLON.Vector3(0, -1, 0)            
+            ]}, scene);
+            
+
+
     });
     //#endregion
 
