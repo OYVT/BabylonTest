@@ -1,1 +1,1 @@
-# Introduction playground to Babylonjs.
+# Playground introduction to Babylonjs.
